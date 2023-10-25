@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.IO;
 using Newtonsoft.Json.Linq;
 
-class Program
+class CACookieCleaner
 {
     static void Main(string[] args)
     {
         try
         {
             Console.Write("Enter the full path to the input HAR file: ");
-            var filePath = Console.ReadLine();
+            var filePath = "C:\\Users\\caadmin\\Desktop\\emeasupport.har";  //Console.ReadLine();
             var inputFile = new FileInfo(filePath);
             var outputFile = Path.Combine(Environment.CurrentDirectory, $"output_{DateTime.Now.ToString("yyyy-MM-dd")}.har");
             
@@ -22,8 +22,8 @@ class Program
                 var entries = harData["log"]["entries"];
                 foreach (var entry in entries)
                 {
-                    ModifyHeaders(entry["request"], "cookie");
-                    ModifyHeaders(entry["response"], "set-cookie");
+                    ModifyHeaders(entry["request"], "Cookie");
+                    ModifyHeaders(entry["response"], "Set-Cookie");
                 }
 
                 File.WriteAllText(outputFile, harData.ToString());
@@ -50,7 +50,7 @@ class Program
             foreach (var header in headers)
             {
                 var name = header["name"];
-                if (name != null && !name.ToString().ToLower().Contains(filter))
+                if (name != null && !name.ToString().Contains(filter) && name.ToString() != filter && name.ToString().ToLower() != filter.ToLower())
                 {
                     updatedHeaders.Add(header);
                 }
