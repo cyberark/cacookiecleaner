@@ -1,5 +1,5 @@
 # CACookieCleaner (CCC)
-This tool meant to remove the cookies from the recorded HAR file from chrome.
+This is tool meant to remove the cookies from the recorded HAR file from chrome.
 
 # Requirements
 dot net version 4.8
