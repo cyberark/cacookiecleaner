@@ -9,7 +9,7 @@ class CACookieCleaner
         try
         {
             Console.Write("Enter the full path to the input HAR file: ");
-            var filePath = "C:\\Users\\caadmin\\Desktop\\emeasupport.har";  //Console.ReadLine();
+            var filePath = Console.ReadLine();
             var inputFile = new FileInfo(filePath);
             var outputFile = Path.Combine(Environment.CurrentDirectory, $"output_{DateTime.Now.ToString("yyyy-MM-dd")}.har");
             
