@@ -8,7 +8,6 @@ class Program
     {
         try
         {
-            //C:\Users\caadmin\Desktop\CyberArk Reporting Issue 1.har
             Console.Write("Enter the full path to the input HAR file: ");
             var filePath = Console.ReadLine();
             var inputFile = new FileInfo(filePath);
