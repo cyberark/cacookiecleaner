@@ -18,4 +18,4 @@ Run in cmd the script and follow the instructions
 # License
 Copyright (c) 2023 CyberArk Software Ltd. All rights reserved.
  
-Please note: This tool is provided as is, and subject to the Apache License Version 2.0. https://www.apache.org/licenses/LICENSE-2.0 
+Please note: This tool is provided as is, and subject to the Apache License Version 2.0.
