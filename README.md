@@ -13,7 +13,7 @@ Insert the full direcotry of the .har file. Example: C:\My\dir\my_file.har
 The tool will generate a new .har file in the same direcotry the CACookieCleaner.exe were triggered, named output(YYYY-MM-DD).har.
 
 CACookieCleaner.py / CACookieCleaner.ps1
-Run in cmd the script and follow the instructions
+Run the script in the command line and follow the instructions
 
 # License
 Copyright (c) 2023 CyberArk Software Ltd. All rights reserved.
