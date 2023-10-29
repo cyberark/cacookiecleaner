@@ -1,6 +1,6 @@
 # CACookieCleaner (CCC)
 This is tool meant to hide the value of the cookies from the recorded HAR file from chrome.
-The tool generate a new HAR file and the cookie value is hide with '*'.
+The tool generate a new HAR file and the cookie value is hidden with '*'.
 Important Note: The original file is not deleted during this process, very recommended to delete the original file.
 
 # Requirements
