@@ -7,6 +7,7 @@ class CACookieCleaner
 {
     class HarFile
     {
+        const string HIDE_COOKIE_VALUE = "*********";
         string outPutFile;
         FileInfo inputFile;
         JObject data;
@@ -28,8 +29,8 @@ class CACookieCleaner
             {
                 if(entry["request"] != null)
                 {
-                    modifyEntryCookies(entry["request"]);
                     modifyEntryHeader(entry["request"]);
+                    modifyEntryCookies(entry["request"]);
                 }
                 if(entry["response"] != null)
                 {
@@ -78,7 +79,7 @@ class CACookieCleaner
                     {
                         if (!cookie["name"].ToString().ToLower().Contains(ignore))
                         {
-                            changeValue(cookie["value"], "*********");
+                            changeValue(cookie["value"], HIDE_COOKIE_VALUE);
                         }
 
                     }
@@ -118,11 +119,11 @@ class CACookieCleaner
                         if (cookies[cookieIndex].Contains("="))
                         {
                             var cookieName = cookies[cookieIndex].Split('=')[0];
-                            cookies[cookieIndex] = $"{cookieName}=*********";
+                            cookies[cookieIndex] = $"{cookieName}={HIDE_COOKIE_VALUE}";
                         }
                         else
                         {
-                            cookies[cookieIndex] = "*********";
+                            cookies[cookieIndex] = HIDE_COOKIE_VALUE;
                         }
                     }
 
@@ -133,8 +134,6 @@ class CACookieCleaner
             {
                 string cuurentValue = string.Join(";", cookies);
                 changeValue(header["value"], cuurentValue);
-                //JValue jValuePtr = (JValue)header["value"];
-                //jValuePtr.Value = result;
             }
         }
         private void changeValue(JToken original, string current)
