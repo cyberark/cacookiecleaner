@@ -107,7 +107,7 @@ class CACookieCleaner
         {
            /*
             * If you want to exclude some properties please insert here, 
-            * in this example user is excluded username
+            * in this example username is excluded
             */
 
             List<string> excludedProperties = new List<string>() { "username" };
