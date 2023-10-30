@@ -188,9 +188,7 @@ class CACookieCleaner
     static void Main(string[] args)
     {
         try
-        {
-            
-     
+        {     
             Console.Write("Enter the file name (.HAR) from the current directory: ");
             var fileName = Console.ReadLine();
 
