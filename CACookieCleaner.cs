@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json.Linq;
-using System.Runtime.CompilerServices;
+
 class CACookieCleaner
 {
     class HarFile
