@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json.Linq;
-
+using System.Runtime.CompilerServices;
 class CACookieCleaner
 {
     class HarFile
     {
+        /* the value you see at the edited HAR file */
         const string HIDE_COOKIE_VALUE = "*********";
+        /* recommended to use a constant path to prevent Path Traversal attack, this command validate the current directory */
+        const string ALLOWED_DIRECTORY = "C:\\CACookieCleaner\\";
+        
         string outPutFile;
         FileInfo inputFile;
         JObject data;
@@ -17,7 +21,7 @@ class CACookieCleaner
         public HarFile(FileInfo inputFile)
         {
             this.inputFile = inputFile;
-            var fileContent = File.ReadAllText(inputFile.FullName);
+            var fileContent = GetFileContent();
             data = JObject.Parse(fileContent);
             entries = data["log"]["entries"];
             outPutFile = Path.Combine(Environment.CurrentDirectory, $"output_{DateTime.Now.ToString("yyyy-MM-dd_HH_mm_ss")}.har");
@@ -145,15 +149,39 @@ class CACookieCleaner
         {
             File.WriteAllText(outPutFile, data.ToString());
         }
-        
+        private string GetFileContent()
+        {
+            using (FileStream fs = new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read))
+            using (StreamReader sr = new StreamReader(fs))
+            {
+                    return sr.ReadToEnd();
+            }
+        }
+
+        public static string GetAllowedDir()
+        {
+            return ALLOWED_DIRECTORY;
+        }
+
     }
 
-    static bool InputValidation(FileInfo FilePath)
+    static bool InputValidation(string FileName, string AllowedDir)
     {
-        if (FilePath.Exists)
+        //in order to avoid Path Traversal attack
+        var baseFolder = AppDomain.CurrentDomain.BaseDirectory;
+        if (AllowedDir.Equals(baseFolder, StringComparison.InvariantCultureIgnoreCase))
         {
-            return FilePath.Extension.Equals(".har", StringComparison.InvariantCultureIgnoreCase);
-        }       
+            if (!FileName.Contains("..") && !FileName.Contains("/"))
+            {
+                var filedir = Path.Combine(baseFolder, FileName);
+
+                if (File.Exists(filedir))
+                {
+                    return Path.GetExtension(filedir).Equals(".har", StringComparison.InvariantCultureIgnoreCase);
+                }
+            }
+        }
+      
         return false;
     }
 
@@ -161,27 +189,30 @@ class CACookieCleaner
     {
         try
         {
-            Console.Write("Enter the full path to the input HAR file: ");
-            var filePath = Console.ReadLine();
             
-            var inputFile = new FileInfo(filePath);
+     
+            Console.Write("Enter the file name (.HAR) from the current directory: ");
+            var fileName = Console.ReadLine();
 
-            if (!InputValidation(inputFile))
+            if (!InputValidation(fileName,HarFile.GetAllowedDir()))
             {
                 System.Environment.Exit(2);
             }
-
+            
+            var inputFile = new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
             var harFile = new HarFile(inputFile);
             harFile.ProcessFile();
             harFile.GenerateOutputFile();
 
-            Console.WriteLine("Success, Press enter any key to exit");
+            Console.WriteLine("New Har created successfully, Press enter any key to exit");
             Console.ReadLine();
         }
         catch (Exception ex)
         {
             Console.WriteLine("Failed, Reason: " + ex.Message);
         }
-    }
 
+    }
+       
 }
+
