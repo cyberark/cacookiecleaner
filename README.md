@@ -1,7 +1,7 @@
 # CACookieCleaner (CCC)
-This is tool meant to hide the value of the cookies from the recorded HAR file from chrome.
-The tool generate a new HAR file and the cookie value is hidden with '*'.
-Important Note: The original file is not deleted during this process, very recommended to delete the original file.
+This is tool designed to hide the value of the cookies from the recorded HAR file to avoid sharing sensitive information with 3rd parties.
+The tool will generate a new HAR file and mask specified cookie values '*'.
+Important Note: The original file is not deleted during this process, we recommended to delete the original file to avoid sharing a file with sensitive data.
 
 # Requirements
 dot net version 4.8
@@ -10,22 +10,22 @@ Python 3.8 and above
 
 # Usage instructions
 BEFORE RUNNING:
-* in class HarFile you can modify the value "HIDE_COOKIE_VALUE", this is how the values are maked.
+* Verify the list of the names of coolies defined in "HIDE_COOKIE_VALUE" constant, change it according to your needs.
 
 * In function "modifyEntryCookies":
 You have a list excludedProperties you can exclude cookies by adding the cookies names (in the example i inserted "username")
 
 * NEW FEATURE - you can insert a regex for masking, by default it will mask: "session", "token", "pass", "id".
   you can modify as much as you, for example: username, action
-  please use comma (,) as sepearator, it will mask the cookie that contain the key, for example if you insert username and some key contain that word, it will mask it.
+  Use comma (,) as separator, it will mask the cookie that containa the key, for example if you insert username and a key contain that word, the tool will mask that key.
   
 # Using CACookieCleaner
-* run the CACookieCleaner.exe via terminal/double click. 
-* Insert the full direcotry of the .har file. Example: C:\My\dir\my_file.har
-* Enter the properties you want to mask (not mandatory) by clicking ENTER it will collect the default. but if you want to use this feature seperate the value with comma.
+* run the CACookieCleaner.exe via command line or by double clicking on it.
+* When prompted, specify the full directory of the .har file. Example: C:\My\dir\my_file.har
+* Enter the comma-separated list of properties you want to mask (optional). Clicking ENTER it will mask the default parameters. 
 
-The tool will generate a new .har file in the same direcotry the CACookieCleaner.exe were triggered, named output(YYYY-MM-DD).har.
-THE TOOL DON'T DELETE THE ORIGINAL .HAR FILE.
+The tool will generate a new .har file in the same directory where CACookieCleaner.exe was executed. The output file will be named output(YYYY-MM-DD).har.
+THE TOOL DOES NOT DELETE THE ORIGINAL .HAR FILE.
 
 CACookieCleaner.py
 Run the script in the command line and follow the instructions
