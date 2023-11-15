@@ -17,7 +17,7 @@ You have a list excludedProperties you can exclude cookies by adding the cookies
 
 * NEW FEATURE - you can insert a regex for masking, by default it will mask: "session", "token", "pass", "id".
   you can modify as much as you, for example: username, action
-  Use comma (,) as separator, it will mask the cookie that containa the key, for example if you insert username and a key contain that word, the tool will mask that key.
+  Use comma (,) as separator, it will mask the cookie that contains the key, for example if you insert username and a key contain that word, the tool will mask that key.
   
 # Using CACookieCleaner
 * run the CACookieCleaner.exe via command line or by double clicking on it.
