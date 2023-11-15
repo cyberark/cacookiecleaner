@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 class CACookieCleaner
 {
@@ -9,16 +11,15 @@ class CACookieCleaner
     {
         /* the value you see at the edited HAR file */
         const string HIDE_COOKIE_VALUE = "*********";
-        /* recommended to use a constant path to prevent Path Traversal attack, this command validate the current directory */
-        const string ALLOWED_DIRECTORY = "C:\\CACookieCleaner\\";
-        
+
         string outPutFile;
         FileInfo inputFile;
         JObject data;
         JToken entries;
-        List<string> headerFilters; 
+        List<string> headerFilters;
+        Regex regex;
 
-        public HarFile(FileInfo inputFile)
+        public HarFile(FileInfo inputFile, string[] pattern)
         {
             this.inputFile = inputFile;
             var fileContent = GetFileContent();
@@ -26,37 +27,54 @@ class CACookieCleaner
             entries = data["log"]["entries"];
             outPutFile = Path.Combine(Environment.CurrentDirectory, $"output_{DateTime.Now.ToString("yyyy-MM-dd_HH_mm_ss")}.har");
             headerFilters = new List<string>() { "Cookie", "Set-Cookie" };
-        } 
+            regex = new Regex(handleInputRegex(pattern), RegexOptions.IgnoreCase);
+        
+        }
         public void ProcessFile()
         {
             foreach (var entry in entries)
             {
-                if(entry["request"] != null)
+                if (entry["request"] != null)
                 {
                     modifyEntryHeader(entry["request"]);
                     modifyEntryCookies(entry["request"]);
+                    
+                    if (entry["request"]["method"].ToString() == "POST")
+                    {
+                        if(entry["request"]["postData"] != null)
+                        {
+                            if (entry["request"]["postData"]["text"] != null)
+                            {
+                                handlePostDataEntry(entry["request"]["postData"]);
+                            }
+                        }
+
+                    }
                 }
-                if(entry["response"] != null)
+                if (entry["response"] != null)
                 {
                     modifyEntryHeader(entry["response"]);
                     modifyEntryCookies(entry["response"]);
-                }    
+                }
+
+
+
             }
         }
         private void modifyEntryHeader(JToken entry)
         {
-            
+
             var headers = entry["headers"];
-            
+
             if (headers != null)
             {
                 var updatedHeaders = new JArray();
-                
+
                 foreach (var header in headers)
                 {
                     var name = header["name"].ToString();
 
-                    if(isFilterFound(name))
+                    if (isFilterFound(name))
                     {
                         editValueProperty(header);
                         updatedHeaders.Add(header);
@@ -64,17 +82,17 @@ class CACookieCleaner
                     else
                     {
                         updatedHeaders.Add(header);
-                    }              
+                    }
                 }
-                
+
                 entry["headers"] = updatedHeaders;
             }
-        } 
+        }
         private void modifyEntryCookies(JToken entry)
         {
             JArray entrytCookies = entry["cookies"] as JArray;
             List<string> excludedProperties = new List<string>() { "username" };
-            
+
             if (entrytCookies != null)
             {
                 foreach (var ignore in excludedProperties)
@@ -92,7 +110,7 @@ class CACookieCleaner
             }
         }
         private bool isFilterFound(string fieldsName)
-        {        
+        {
             foreach (var filter in headerFilters)
             {
                 if (fieldsName != null && (fieldsName.Contains(filter) || fieldsName == filter || fieldsName.ToLower() == filter.ToLower()))
@@ -100,15 +118,15 @@ class CACookieCleaner
                     return true;
                 }
             }
-            
+
             return false;
         }
         private void editValueProperty(JToken header)
         {
-           /*
-            * If you want to exclude some properties please insert here, 
-            * in this example username is excluded
-            */
+            /*
+             * If you want to exclude some properties please insert here, 
+             * in this example user is excluded username
+             */
 
             List<string> excludedProperties = new List<string>() { "username" };
 
@@ -144,7 +162,7 @@ class CACookieCleaner
         {
             JValue jValuePtr = (JValue)original;
             jValuePtr.Value = current;
-        }    
+        }
         public void GenerateOutputFile()
         {
             File.WriteAllText(outPutFile, data.ToString());
@@ -154,51 +172,157 @@ class CACookieCleaner
             using (FileStream fs = new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read))
             using (StreamReader sr = new StreamReader(fs))
             {
-                    return sr.ReadToEnd();
+                return sr.ReadToEnd();
             }
         }
-
-        public static string GetAllowedDir()
+        private string handleInputRegex(string[] pattern)
         {
-            return ALLOWED_DIRECTORY;
+            var defaultPatterns = new List<string> { "session", "token", "pass", "id" };
+            if(pattern.Length > 0)
+            {
+                for (var index = 0; index < pattern.Length; index++)
+                {
+                    pattern[index] = pattern[index].Trim().ToLower();
+                    if(pattern[index] == "." || pattern[index] == "")
+                    {
+                        continue;
+                    }
+                    if(pattern[index] == "*")
+                    {
+                        return @".*";
+                    }
+                    if (!defaultPatterns.Contains(pattern[index]))
+                    {
+                        defaultPatterns.Add(pattern[index]);
+                    }
+                }
+            }
+
+            for(var index = 0; index < defaultPatterns.Count; index++)
+            {
+                defaultPatterns[index] = defaultPatterns[index].Trim();
+                defaultPatterns[index] = $".*{defaultPatterns[index]}.*";
+            }
+            return $"{string.Join("|", defaultPatterns)}";
         }
 
-    }
-
-    static bool InputValidation(string FileName, string AllowedDir)
-    {
-        //in order to avoid Path Traversal attack
-        var baseFolder = AppDomain.CurrentDomain.BaseDirectory;
-        if (AllowedDir.Equals(baseFolder, StringComparison.InvariantCultureIgnoreCase))
+        private void handlePostDataEntry(JToken entry)
         {
-            if (!FileName.Contains("..") && !FileName.Contains("/"))
+            if (entry["text"] is JValue)
             {
-                var filedir = Path.Combine(baseFolder, FileName);
-
-                if (File.Exists(filedir))
+                if (entry["text"].Type == JTokenType.String)
                 {
-                    return Path.GetExtension(filedir).Equals(".har", StringComparison.InvariantCultureIgnoreCase);
+                    search_and_modify(entry);
+
                 }
             }
         }
-      
+
+        private void search_and_modify(JToken postData)
+        {
+            if (postData["text"] is JValue && postData["text"].Type == JTokenType.String)
+            {
+                
+                var jsonString = postData["text"].Value<string>();
+                var jsonDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+                List<string> keysToModify = new List<string>();
+                foreach (var item in jsonDict)
+                {
+                    if (item.Value != null)
+                    {
+                        if (item.Value is JArray)
+                        {
+                            JArray jsonArray = (JArray)item.Value;
+
+                            foreach (JToken arrayItem in jsonArray)
+                            {
+                                if (arrayItem is JObject arrayObject)
+                                {
+                                    foreach (var property in arrayObject.Properties())
+                                    {
+                                        var propertyKey = property.Name;
+                                        if (matchCustomerRegexInput(property.Name))
+                                        {
+                                            arrayItem[propertyKey] = HIDE_COOKIE_VALUE;
+                                        }
+                                    }
+                                }
+                                else if(arrayItem is JValue arrayJValue)
+                                {
+                                    if (matchCustomerRegexInput(arrayJValue.Value.ToString()))
+                                    {
+                                        changeValue(arrayJValue,HIDE_COOKIE_VALUE);
+                                    }
+                                }
+
+
+                            }
+
+                        }
+                        else if (item.Value is string)
+                        {
+                            if (matchCustomerRegexInput(item.Key))
+                            {
+                                keysToModify.Add(item.Key);                            }
+                        }
+                    }
+                }
+
+                foreach(var key in keysToModify)
+                {
+                    jsonDict[key] = HIDE_COOKIE_VALUE;
+                }
+
+                if (keysToModify.Count > 0)
+                {
+                    var jsonObject = JsonConvert.SerializeObject(jsonDict);
+                    postData["text"] = jsonObject;
+                }
+            }
+
+        }
+
+        private bool matchCustomerRegexInput(string property)
+        {
+            MatchCollection matches = regex.Matches(property);
+            foreach (Match match in matches)
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    static bool InputValidation(string filepath)
+    {
+        if (!filepath.Contains("..") && !filepath.Contains("/"))
+        {
+            if (File.Exists(filepath))
+            {
+                return Path.GetExtension(filepath).Equals(".har", StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
         return false;
     }
 
     static void Main(string[] args)
     {
         try
-        {     
-            Console.Write("Enter the file name (.HAR) from the current directory: ");
-            var fileName = Console.ReadLine();
+        {
+            Console.Write("Enter the full file path directory (.HAR) and pattern for serach\n");
+            var filepath = Console.ReadLine();
+            Console.Write("Enter the properties you want to mask, not mandatory. you can insert more than one and saperate it with ','\n");
+            var inputRegex = Console.ReadLine().Split(',');
 
-            if (!InputValidation(fileName,HarFile.GetAllowedDir()))
+            if (!InputValidation(filepath))
             {
                 System.Environment.Exit(2);
             }
-            
-            var inputFile = new FileInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName));
-            var harFile = new HarFile(inputFile);
+
+            var inputFile = new FileInfo(filepath);
+            var harFile = new HarFile(inputFile, inputRegex);
             harFile.ProcessFile();
             harFile.GenerateOutputFile();
 
@@ -211,6 +335,7 @@ class CACookieCleaner
         }
 
     }
-       
+
 }
+
 
